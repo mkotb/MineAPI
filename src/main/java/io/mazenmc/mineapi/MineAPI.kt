@@ -18,6 +18,7 @@ package io.mazenmc.mineapi
 import io.mazenmc.mineapi.routes.BaseRoute
 import io.mazenmc.mineapi.routes.RouteRegistrar
 import io.mazenmc.mineapi.utils.GsonProvider
+import io.mazenmc.mineapi.utils.RateLimiter
 import org.wasabi.app.AppConfiguration
 import org.wasabi.app.AppServer
 import java.io.File
@@ -47,19 +48,25 @@ public object MineAPI {
 
     public fun get(route: BaseRoute) {
         server().get("/v${version}/${route.name}", {
-            route.act(request, response)
+            if (RateLimiter.processRequest(request, response)) {
+                route.act(request, response)
+            }
         })
     }
 
     public fun post(route: BaseRoute) {
         server().post("/v${version}/${route.name}", {
-            route.act(request, response)
+            if (RateLimiter.processRequest(request, response)) {
+                route.act(request, response)
+            }
         })
     }
 
     public fun put(route: BaseRoute) {
         server().put("/v${version}/${route.name}", {
-            route.act(request, response)
+            if (RateLimiter.processRequest(request, response)) {
+                route.act(request, response)
+            }
         })
     }
 }
