@@ -20,18 +20,27 @@ import com.google.common.cache.CacheBuilder
 import com.mashape.unirest.http.JsonNode
 import com.mashape.unirest.http.Unirest
 import com.mashape.unirest.http.exceptions.UnirestException
+import io.mazenmc.mineapi.MineAPI
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import kotlin.properties.Delegates
 
 public object IdentifierProvider {
     private val idPattern: Pattern = Pattern.compile("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})")
     private val value: Any = Any()
-    private val identifiers: Cache<IdentifierEntry, Any> = CacheBuilder.newBuilder()
-            .maximumSize(10000)
-            .expireAfterAccess(30, TimeUnit.MINUTES)
-            .concurrencyLevel(3)
-            .build()
+    private var identifiers: Cache<IdentifierEntry, Any> by Delegates.notNull()
+
+    public fun init() {
+        var config = MineAPI.config.idConfig
+
+        identifiers = CacheBuilder.newBuilder()
+                .maximumSize(config.maxSize.toLong())
+                .expireAfterAccess(config.cacheTime.toLong(), TimeUnit.MINUTES)
+                .concurrencyLevel(3)
+                .build()
+        MineAPI.debug("initialized identifiers cache with ${config.maxSize} max, ${config.cacheTime} minutes for cache time")
+    }
 
     public fun idFor(id: String): IdentifierEntry? {
         identifiers.cleanUp()
@@ -54,10 +63,12 @@ public object IdentifierProvider {
     }
 
     public fun requestFor(name: String): Boolean {
-        var response = Unirest.get("https://api.mojang.com/users/profiles/minecraft/${name}")
+        var url = "https://api.mojang.com/users/profiles/minecraft/${name}"
+        var response = Unirest.get(url)
                 .asJson()
 
         if (response.getStatus() == 204) {
+            MineAPI.debug("response from ${url} threw 204: ${response.getStatusText()}")
             return false
         }
 
@@ -69,8 +80,14 @@ public object IdentifierProvider {
     }
 
     public fun requestFor(id: UUID): Boolean {
-        var response = Unirest.get("https://api.mojang.com/user/profiles/${id.toString().replace("-", "")}/names")
+        var url = "https://api.mojang.com/user/profiles/${id.toString().replace("-", "")}/names"
+        var response = Unirest.get(url)
                 .asJson()
+
+        if (response.getStatus() != 200) {
+            MineAPI.debug("response from ${url} threw ${response.getStatus()}: ${response.getStatusText()}")
+            return false
+        }
 
         var names = response.getBody().getArray()
         var entry = IdentifierEntry(names.getJSONObject(names.length() - 1).getString("name"), id)

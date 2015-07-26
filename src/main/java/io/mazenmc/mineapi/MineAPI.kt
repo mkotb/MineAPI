@@ -19,20 +19,34 @@ import com.mashape.unirest.http.Unirest
 import io.mazenmc.mineapi.routes.BaseRoute
 import io.mazenmc.mineapi.routes.RouteRegistrar
 import io.mazenmc.mineapi.utils.GsonProvider
+import io.mazenmc.mineapi.utils.IdentifierProvider
 import io.mazenmc.mineapi.utils.RateLimiter
 import org.wasabi.app.AppConfiguration
 import org.wasabi.app.AppServer
 import java.io.File
 import java.io.FileReader
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
 import kotlin.properties.Delegates
 
 fun main(args: Array<String>) {
-    var config = GsonProvider.gson().fromJson(FileReader(File("config.json")), javaClass<MineConfiguration>())
+    var configFile = File("config.json")
+
+    if (!configFile.exists()) {
+        Files.copy(javaClass<MineConfiguration>().getResourceAsStream("/config.json"),
+                Paths.get(configFile.toURI()))
+    }
+
+    var config = GsonProvider.gson().fromJson(FileReader(configFile), javaClass<MineConfiguration>())
 
     MineAPI.config = config
+    IdentifierProvider.init() // load
     MineAPI.server = AppServer(config.asAppConfig())
     RouteRegistrar.registerRoutes()
+
+    MineAPI.verbose("initialized RateLimiter cache with 10000 maximum size, 1 minute expire after write, " +
+            "${config.rateLimit} limit")
     MineAPI.server.start(true)
 }
 
@@ -49,18 +63,24 @@ public object MineAPI {
         return config
     }
 
+    public fun debug(message: String) {
+        if (config.debug)
+            println("DEBUG: ${message}")
+    }
+
+    public fun verbose(message: String) {
+        if (config.verboseLogging)
+            println("VERBOSE: ${message}")
+    }
+
     public fun get(route: BaseRoute) {
         server().get("/v${version}/${route.name}", {
-            try {
-                if (RateLimiter.processRequest(request, response)) {
-                    route.act(request, response)
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                response.statusCode = 500
-                response.send("Internal server error")
+            if (RateLimiter.processRequest(request, response)) {
+                route.act(request, response)
             }
         })
+
+        verbose("Registered route ${route.javaClass.getName()} at ${route.name}")
     }
 
     public fun post(route: BaseRoute) {

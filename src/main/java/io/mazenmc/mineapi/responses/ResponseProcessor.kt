@@ -15,12 +15,16 @@
  */
 package io.mazenmc.mineapi.responses
 
+import io.mazenmc.mineapi.MineAPI
 import io.mazenmc.mineapi.utils.GsonProvider
 import org.wasabi.http.Response
 
 public object ResponseProcessor {
     public fun process(res: RouteResponse, response: Response) {
+        var processed = GsonProvider.gson().toJson(res)
+
         response.statusCode = 200
-        response.send(GsonProvider.gson().toJson(res), "application/json")
+        response.send(processed, "application/json")
+        MineAPI.verbose("Responded with ${processed}")
     }
 }

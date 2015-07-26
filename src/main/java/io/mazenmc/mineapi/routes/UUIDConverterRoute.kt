@@ -15,6 +15,7 @@
  */
 package io.mazenmc.mineapi.routes
 
+import io.mazenmc.mineapi.MineAPI
 import io.mazenmc.mineapi.responses.ResponseProcessor
 import io.mazenmc.mineapi.responses.UUIDConvertResponse
 import io.mazenmc.mineapi.utils.IdentifierProvider
@@ -30,8 +31,9 @@ public class UUIDConverterRoute : BaseRoute {
         var id = IdentifierProvider.idFor(name)
 
         if (id == null && !IdentifierProvider.requestFor(name)) {
-            response.statusCode = 500
-            response.send("Internal server error")
+            response.statusCode = 400
+            response.send("No player found by name ${name}")
+            MineAPI.debug("Could not find player by name ${name}")
             return
         }
 

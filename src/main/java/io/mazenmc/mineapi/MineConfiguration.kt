@@ -17,7 +17,9 @@ package io.mazenmc.mineapi
 
 import org.wasabi.app.AppConfiguration
 
-data public class MineConfiguration(val port: Int = 3000, val debug: Boolean = false, val rateLimit: Int = 100) {
+data public class MineConfiguration(val port: Int = 3000, val debug: Boolean = false, val rateLimit: Int = 100,
+                                    val idConfig: IdentifierConfiguration = IdentifierConfiguration(),
+                                    val verboseLogging: Boolean = false) {
     public fun asAppConfig(): AppConfiguration {
         var new = AppConfiguration()
 
@@ -27,3 +29,5 @@ data public class MineConfiguration(val port: Int = 3000, val debug: Boolean = f
         return new
     }
 }
+
+data class IdentifierConfiguration(val cacheTime: Int = 30, val maxSize: Int = 10000)

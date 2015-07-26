@@ -41,11 +41,14 @@ public object RateLimiter {
         ++data.requests
         data.lastRequest = System.currentTimeMillis()
 
-        var canRequest = data.requests < MineAPI.config().rateLimit
+        var rateLimit = MineAPI.config().rateLimit
+        var canRequest = data.requests < rateLimit
 
         if (!canRequest) {
             response.statusCode = 429
             response.send("")
+            MineAPI.debug("Rate limited ${request.host}, is ${data.requests - rateLimit} over the rate limit. " +
+                    "(${data.requests},${rateLimit})")
         }
 
         return canRequest
