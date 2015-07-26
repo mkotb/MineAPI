@@ -36,6 +36,6 @@ public class UUIDConverterRoute : BaseRoute {
         }
 
         id = IdentifierProvider.idFor(name) // retry, should be not null
-        ResponseProcessor.process(UUIDConvertResponse(id.toString()), response)
+        ResponseProcessor.process(UUIDConvertResponse(id!!.id.toString()), response)
     }
 }

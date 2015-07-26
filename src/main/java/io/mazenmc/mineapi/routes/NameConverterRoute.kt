@@ -30,8 +30,8 @@ public class NameConverterRoute: BaseRoute {
         var uuid: UUID
 
         try {
-            uuid = UUID.fromString("${stringId.substring(0, 7)}-${stringId.substring(7, 11)}" +
-                    "-${stringId.substring(11, 15)}-${stringId.substring(15, 19)}-${stringId.substring(19, 31)}")
+            uuid = UUID.fromString(IdentifierProvider.idPattern().matcher(stringId)
+                    .replaceAll("$1-$2-$3-$4-$5"))
         } catch (ex: IllegalArgumentException) {
             response.statusCode = 400
             var msg = ex.getMessage()
@@ -52,11 +52,6 @@ public class NameConverterRoute: BaseRoute {
         }
 
         id = IdentifierProvider.idFor(uuid) // try again
-
-        if (id == null) {
-            return
-        }
-
-        ResponseProcessor.process(NameConvertResponse(id.name, id.oldNames), response)
+        ResponseProcessor.process(NameConvertResponse(id!!.name, id.oldNames), response)
     }
 }

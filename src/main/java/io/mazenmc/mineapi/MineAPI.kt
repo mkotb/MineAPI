@@ -15,6 +15,7 @@
  */
 package io.mazenmc.mineapi
 
+import com.mashape.unirest.http.Unirest
 import io.mazenmc.mineapi.routes.BaseRoute
 import io.mazenmc.mineapi.routes.RouteRegistrar
 import io.mazenmc.mineapi.utils.GsonProvider
@@ -23,6 +24,7 @@ import org.wasabi.app.AppConfiguration
 import org.wasabi.app.AppServer
 import java.io.File
 import java.io.FileReader
+import java.util.*
 import kotlin.properties.Delegates
 
 fun main(args: Array<String>) {
@@ -31,6 +33,7 @@ fun main(args: Array<String>) {
     MineAPI.config = config
     MineAPI.server = AppServer(config.asAppConfig())
     RouteRegistrar.registerRoutes()
+    MineAPI.server.start(true)
 }
 
 public object MineAPI {
@@ -48,8 +51,14 @@ public object MineAPI {
 
     public fun get(route: BaseRoute) {
         server().get("/v${version}/${route.name}", {
-            if (RateLimiter.processRequest(request, response)) {
-                route.act(request, response)
+            try {
+                if (RateLimiter.processRequest(request, response)) {
+                    route.act(request, response)
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                response.statusCode = 500
+                response.send("Internal server error")
             }
         })
     }

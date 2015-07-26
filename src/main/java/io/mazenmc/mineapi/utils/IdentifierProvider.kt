@@ -19,10 +19,13 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.mashape.unirest.http.JsonNode
 import com.mashape.unirest.http.Unirest
+import com.mashape.unirest.http.exceptions.UnirestException
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 
 public object IdentifierProvider {
+    private val idPattern: Pattern = Pattern.compile("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})")
     private val value: Any = Any()
     private val identifiers: Cache<IdentifierEntry, Any> = CacheBuilder.newBuilder()
             .maximumSize(10000)
@@ -52,18 +55,21 @@ public object IdentifierProvider {
 
     public fun requestFor(name: String): Boolean {
         var response = Unirest.get("https://api.mojang.com/users/profiles/minecraft/${name}")
-                .asString()
+                .asJson()
 
         if (response.getStatus() == 204) {
             return false
         }
 
-        insert(GsonProvider.gson().fromJson(response.getBody(), javaClass<IdentifierEntry>()))
+        var stringId = response.getBody().getObject().getString("id")
+        stringId = idPattern.matcher(stringId).replaceAll("$1-$2-$3-$4-$5")
+
+        insert(IdentifierEntry(name, UUID.fromString(stringId)))
         return true
     }
 
     public fun requestFor(id: UUID): Boolean {
-        var response = Unirest.get("https://api.mojang.com/user/profiles/${id.toString()}/names")
+        var response = Unirest.get("https://api.mojang.com/user/profiles/${id.toString().replace("-", "")}/names")
                 .asJson()
 
         var names = response.getBody().getArray()
@@ -79,6 +85,10 @@ public object IdentifierProvider {
 
         insert(entry)
         return true
+    }
+
+    public fun idPattern(): Pattern {
+        return idPattern
     }
 }
 
