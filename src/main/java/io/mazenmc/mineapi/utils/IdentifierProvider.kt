@@ -73,13 +73,13 @@ public object IdentifierProvider {
                 .asJson()
 
         var names = response.getBody().getArray()
-        var entry = IdentifierEntry(names.getJSONObject(0).getString("name"), id)
+        var entry = IdentifierEntry(names.getJSONObject(names.length() - 1).getString("name"), id)
 
         if (names.length() > 1) {
-            for (i in 1..names.length()) {
+            for (i in 0..(names.length() - 2)) {
                 var oldName = names.getJSONObject(i)
 
-                entry.oldNames.put(oldName.getString("name"), oldName.getLong("changedToAt"))
+                entry.oldNames.add(oldName.getString("name"))
             }
         }
 
@@ -92,5 +92,5 @@ public object IdentifierProvider {
     }
 }
 
-data public class IdentifierEntry(var name: String, var id: UUID, val oldNames: MutableMap<String, Long> = HashMap()) {
+data public class IdentifierEntry(var name: String, var id: UUID, val oldNames: MutableList<String> = ArrayList()) {
 }
