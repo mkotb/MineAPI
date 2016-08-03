@@ -25,7 +25,8 @@ After the first start of the application, a file called `config.json` will be cr
 
   "idConfig": { // configuration for identifiers (UUIDs, names)
     "cacheTime": 30, // how long an entry will stay in the cache in minutes, time is renewed after every access
-    "maxSize": 10000 // maximum size of the cache
+    "maxSize": 10000, // maximum size of the cache
+    "provider": "mojang" // crrently also supports mcapi (note: oldNames are not supported with mcapi)
   }
 }
 ```
