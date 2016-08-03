@@ -15,6 +15,6 @@
  */
 package io.mazenmc.mineapi.responses
 
-public interface RouteResponse {
+interface RouteResponse {
     // going to make this do nothing
 }

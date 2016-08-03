@@ -15,5 +15,5 @@
  */
 package io.mazenmc.mineapi.responses
 
-data public class NameConvertResponse(var name: String, var oldNames: List<String>): RouteResponse
-data public class UUIDConvertResponse(var uuid: String): RouteResponse
+data class NameConvertResponse(var name: String, var oldNames: List<String>): RouteResponse
+data class UUIDConvertResponse(var uuid: String): RouteResponse

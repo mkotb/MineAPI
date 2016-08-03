@@ -17,8 +17,8 @@ package io.mazenmc.mineapi.routes
 
 import io.mazenmc.mineapi.MineAPI
 
-public object RouteRegistrar {
-    public fun registerRoutes() {
+object RouteRegistrar {
+    fun registerRoutes() {
         MineAPI.get(NameConverterRoute())
         MineAPI.get(UUIDConverterRoute())
     }

@@ -13,18 +13,12 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-package io.mazenmc.mineapi.responses
+package io.mazenmc.mineapi.provider
 
-import io.mazenmc.mineapi.MineAPI
-import io.mazenmc.mineapi.utils.GsonProvider
-import org.wasabi.protocol.http.Response
+import io.mazenmc.mineapi.utils.IdentifierEntry
+import java.util.*
 
-object ResponseProcessor {
-    fun process(res: RouteResponse, response: Response) {
-        var processed = GsonProvider.gson().toJson(res)
-
-        response.statusCode = 200
-        response.send(processed, "application/json")
-        MineAPI.verbose("Responded with ${processed}")
-    }
+interface Provider {
+    fun request(id: UUID): IdentifierEntry?
+    fun request(name: String): IdentifierEntry?
 }

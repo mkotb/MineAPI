@@ -21,17 +21,20 @@ import com.mashape.unirest.http.JsonNode
 import com.mashape.unirest.http.Unirest
 import com.mashape.unirest.http.exceptions.UnirestException
 import io.mazenmc.mineapi.MineAPI
+import io.mazenmc.mineapi.provider.Provider
+import io.mazenmc.mineapi.provider.ProviderHolder
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import kotlin.properties.Delegates
 
-public object IdentifierProvider {
-    private val idPattern: Pattern = Pattern.compile("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})")
+object IdentifierProvider {
+    val idPattern: Pattern = Pattern.compile("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})")
     private val value: Any = Any()
     private var identifiers: Cache<IdentifierEntry, Any> by Delegates.notNull()
+    private var provider: Provider by Delegates.notNull()
 
-    public fun init() {
+    fun init() {
         var config = MineAPI.config.idConfig
 
         identifiers = CacheBuilder.newBuilder()
@@ -39,75 +42,47 @@ public object IdentifierProvider {
                 .expireAfterAccess(config.cacheTime.toLong(), TimeUnit.MINUTES)
                 .concurrencyLevel(3)
                 .build()
+        provider = ProviderHolder.providerBy(config.provider.toLowerCase())
         MineAPI.debug("initialized identifiers cache with ${config.maxSize} max, ${config.cacheTime} minutes for cache time")
+        MineAPI.debug("using ${config.provider} provider")
     }
 
-    public fun idFor(id: String): IdentifierEntry? {
+    fun idFor(id: String): IdentifierEntry? {
         identifiers.cleanUp()
 
-        return identifiers.asMap().keySet().firstOrNull {
-            it.name.equals(id, true)
-        }
+        return identifiers.asMap().entries.firstOrNull {
+            it.key.name.equals(id)
+        }?.key
     }
 
-    public fun idFor(id: UUID): IdentifierEntry? {
+    fun idFor(id: UUID): IdentifierEntry? {
         identifiers.cleanUp()
 
-        return identifiers.asMap().keySet().firstOrNull {
-            it.id.equals(id)
-        }
+        return identifiers.asMap().entries.firstOrNull {
+            it.key.id.equals(id)
+        }?.key
     }
 
-    public fun insert(entry: IdentifierEntry) {
+    fun insert(entry: IdentifierEntry) {
         identifiers.put(entry, value)
     }
 
-    public fun requestFor(name: String): Boolean {
-        var url = "https://api.mojang.com/users/profiles/minecraft/${name}"
-        var response = Unirest.get(url)
-                .asJson()
-
-        if (response.getStatus() == 204) {
-            MineAPI.debug("response from ${url} threw 204: ${response.getStatusText()}")
-            return false
-        }
-
-        var stringId = response.getBody().getObject().getString("id")
-        stringId = idPattern.matcher(stringId).replaceAll("$1-$2-$3-$4-$5")
-
-        insert(IdentifierEntry(name, UUID.fromString(stringId)))
+    fun requestFor(name: String): Boolean {
+        var response = provider.request(name) ?: return false
+        insert(response)
         return true
     }
 
-    public fun requestFor(id: UUID): Boolean {
-        var url = "https://api.mojang.com/user/profiles/${id.toString().replace("-", "")}/names"
-        var response = Unirest.get(url)
-                .asJson()
-
-        if (response.getStatus() != 200) {
-            MineAPI.debug("response from ${url} threw ${response.getStatus()}: ${response.getStatusText()}")
-            return false
-        }
-
-        var names = response.getBody().getArray()
-        var entry = IdentifierEntry(names.getJSONObject(names.length() - 1).getString("name"), id)
-
-        if (names.length() > 1) {
-            for (i in 0..(names.length() - 2)) {
-                var oldName = names.getJSONObject(i)
-
-                entry.oldNames.add(oldName.getString("name"))
-            }
-        }
-
-        insert(entry)
+    fun requestFor(id: UUID): Boolean {
+        var response = provider.request(id) ?: return false
+        insert(response)
         return true
     }
 
-    public fun idPattern(): Pattern {
+    fun idPattern(): Pattern {
         return idPattern
     }
 }
 
-data public class IdentifierEntry(var name: String, var id: UUID, val oldNames: MutableList<String> = ArrayList()) {
+data class IdentifierEntry(var name: String, var id: UUID, val oldNames: MutableList<String> = ArrayList()) {
 }

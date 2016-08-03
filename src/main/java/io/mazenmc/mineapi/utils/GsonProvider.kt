@@ -17,10 +17,10 @@ package io.mazenmc.mineapi.utils
 
 import com.google.gson.Gson
 
-public object GsonProvider {
+object GsonProvider {
     private val gson : Gson = Gson()
 
-    public fun gson(): Gson {
+    fun gson(): Gson {
         return gson
     }
 }

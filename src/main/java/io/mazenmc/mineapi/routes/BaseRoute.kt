@@ -15,10 +15,10 @@
  */
 package io.mazenmc.mineapi.routes
 
-import org.wasabi.http.Request
-import org.wasabi.http.Response
+import org.wasabi.protocol.http.Request
+import org.wasabi.protocol.http.Response
 
-public interface BaseRoute {
+interface BaseRoute {
     val name: String
 
     fun act(request: Request, response: Response)

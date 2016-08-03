@@ -19,11 +19,11 @@ import io.mazenmc.mineapi.MineAPI
 import io.mazenmc.mineapi.responses.NameConvertResponse
 import io.mazenmc.mineapi.responses.ResponseProcessor
 import io.mazenmc.mineapi.utils.IdentifierProvider
-import org.wasabi.http.Request
-import org.wasabi.http.Response
+import org.wasabi.protocol.http.Request
+import org.wasabi.protocol.http.Response
 import java.util.*
 
-public class NameConverterRoute: BaseRoute {
+class NameConverterRoute: BaseRoute {
     override val name = "player/:uuid/name"
 
     override fun act(request: Request, response: Response) {
@@ -35,7 +35,7 @@ public class NameConverterRoute: BaseRoute {
                     .replaceAll("$1-$2-$3-$4-$5"))
         } catch (ex: IllegalArgumentException) {
             response.statusCode = 400
-            var msg = ex.getMessage()
+            var msg = ex.message
 
             if (msg != null)
                 response.send(msg)

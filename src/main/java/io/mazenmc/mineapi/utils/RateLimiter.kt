@@ -18,18 +18,18 @@ package io.mazenmc.mineapi.utils
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.mazenmc.mineapi.MineAPI
-import org.wasabi.http.Request
-import org.wasabi.http.Response
+import org.wasabi.protocol.http.Request
+import org.wasabi.protocol.http.Response
 import java.util.concurrent.TimeUnit
 
-public object RateLimiter {
+object RateLimiter {
     private val limitData: Cache<String, RateData> = CacheBuilder.newBuilder()
             .maximumSize(10000)
             .expireAfterWrite(1, TimeUnit.MINUTES)
             .concurrencyLevel(5)
             .build()
 
-    public fun processRequest(request: Request, response: Response): Boolean {
+    fun processRequest(request: Request, response: Response): Boolean {
         limitData.cleanUp();
 
         if (!limitData.asMap().contains(request.host)) {
@@ -38,7 +38,7 @@ public object RateLimiter {
 
         var data = limitData.getIfPresent(request.host)
 
-        ++data.requests
+        ++data!!.requests
         data.lastRequest = System.currentTimeMillis()
 
         var rateLimit = MineAPI.config().rateLimit
@@ -48,7 +48,7 @@ public object RateLimiter {
             response.statusCode = 429
             response.send("")
             MineAPI.debug("Rate limited ${request.host}, is ${data.requests - rateLimit} over the rate limit. " +
-                    "(${data.requests},${rateLimit})")
+                    "(${data.requests},$rateLimit)")
         }
 
         return canRequest

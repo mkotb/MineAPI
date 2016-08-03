@@ -19,21 +19,20 @@ import io.mazenmc.mineapi.MineAPI
 import io.mazenmc.mineapi.responses.ResponseProcessor
 import io.mazenmc.mineapi.responses.UUIDConvertResponse
 import io.mazenmc.mineapi.utils.IdentifierProvider
-import org.wasabi.http.Request
-import org.wasabi.http.Response
-import org.wasabi.routing.RouteHandler
+import org.wasabi.protocol.http.Request
+import org.wasabi.protocol.http.Response
 
-public class UUIDConverterRoute : BaseRoute {
+class UUIDConverterRoute : BaseRoute {
     override val name: String = "player/:name/uuid"
 
     override fun act(request: Request, response: Response) {
         var name = request.routeParams["name"]
-        var id = IdentifierProvider.idFor(name)
+        var id = IdentifierProvider.idFor(name!!)
 
         if (id == null && !IdentifierProvider.requestFor(name)) {
             response.statusCode = 400
-            response.send("No player found by name ${name}")
-            MineAPI.debug("Could not find player by name ${name}")
+            response.send("No player found by name $name")
+            MineAPI.debug("Could not find player by name $name")
             return
         }
 
